@@ -1,0 +1,6 @@
+.loader {
+    height: calc(100vh - 180px);
+    /* display: none; */
+    justify-content: center;
+    align-items: center;
+}

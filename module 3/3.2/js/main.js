@@ -1,4 +1,8 @@
 const $ul = document.querySelector('#people_list');
+const $loader = document.querySelector('.loader');
+const $ulPagination = document.querySelector('.pagination');
+let currentPage = 1;
+let buttons = []
 
 const addPersonItem = (person) => {
     // <li class="list-group-item"> Name </li>
@@ -6,7 +10,6 @@ const addPersonItem = (person) => {
     const secondFilm = _.get(person, '["films"][1]', 'Unknown');
     const $li = document.createElement('li');
     $li.className = 'list-group-item';
-
     // name + '(birth year: ' + birthYear + ')';
     $li.innerText = `
         ${person['name']}
@@ -16,20 +19,61 @@ const addPersonItem = (person) => {
     $ul.appendChild($li);
 };
 
-// fetch('https://swapi.dev/api/people/?page=3')
-//     .then((response) => response.json()) // get json from response
-//     .then((json) => {
-//         json.results.forEach(person => {
-//             addPersonItem(person);
-//         });
-//     }); // get data
+const pagination = (data) => {
+    const pages = Math.ceil(data['count']/10)
+    const arrPages = []
+    arrPages.push('<li class="page-item"><a class="page-link">Previous</a></li>')
+    for(let i = 1; i < pages + 1; i++) {
+        const $li = `<li class="page-item"><a class="page-link" href="#">${i}</a></li>`;
+        arrPages.push($li)
+    }
+    arrPages.push('<li class="page-item"><a class="page-link" href="#">Next</a></li>')
+    $ulPagination.innerHTML = arrPages.join('');
 
-// request.catch();
-// request.finally();
+    buttons = document.querySelectorAll('.page-item');
+    buttons.forEach((btn, index)=> {
+        if(index == currentPage) {
+            btn.classList.add('active');
+        }
+        if(data.previous == null) {
+            buttons[0].classList.add('disabled');
+        }
+        if(data.next == null) {
+            buttons[pages+1].classList.add('disabled');
+        }
+        btn.addEventListener('click', (event) => {     
+            if(event.target.innerText == 'Previous') {
+                if(data.previous == null) {
+                    return
+                }
+                currentPage = data.previous.slice(-1)
+                getPeople(currentPage)
+            }   else if (event.target.innerText == 'Next') {
+                if(data.next == null) {
+                    return
+                }
+                currentPage = data.next.slice(-1)
+                getPeople(currentPage)
+            } else {
+                currentPage = event.target.innerText
+                getPeople(currentPage)
+            }      
+        })
+    })
+};
 
-axios.get('https://swapi.dev/api/people/?page=3')
-    .then((res) => {
-        res.data.results.forEach(person => {
-            addPersonItem(person);
+function getPeople(page = 1) {
+    $loader.style.display = 'flex'
+    fetch(`https://swapi.dev/api/people/?page=${page}`)
+        .then((response) => response.json()) // get json from response
+        .then((data) => {
+            $ul.innerHTML = ''
+            pagination(data);
+            data.results.forEach(person => {
+                addPersonItem(person);
+            });
+            $loader.style.display = 'none'
         });
-    });
+}
+
+getPeople();
